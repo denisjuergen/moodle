@@ -214,10 +214,10 @@ class sync_members_testcase extends advanced_testcase {
      * Test for sync_members::sync_member_information().
      */
     public function test_sync_member_information() {
-        list($totalcount, $enrolledcount) = $this->task->sync_member_information($this->tool, $this->consumer, $this->members);
+        list($users, $enrolledcount) = $this->task->sync_member_information($this->tool, $this->consumer, $this->members);
         $membercount = count($this->members);
         $this->assertCount(10, $this->members);
-        $this->assertEquals($membercount, $totalcount);
+        $this->assertCount($membercount, $users);
         $this->assertEquals($membercount, $enrolledcount);
     }
 
@@ -226,10 +226,10 @@ class sync_members_testcase extends advanced_testcase {
      */
     public function test_sync_profile_images() {
         $task = $this->task;
-        list($totalcount, $enrolledcount) = $task->sync_member_information($this->tool, $this->consumer, $this->members);
+        list($users, $enrolledcount) = $task->sync_member_information($this->tool, $this->consumer, $this->members);
         $membercount = count($this->members);
         $this->assertCount(10, $this->members);
-        $this->assertEquals($membercount, $totalcount);
+        $this->assertCount($membercount, $users);
         $this->assertEquals($membercount, $enrolledcount);
 
         // Suppress output.
@@ -245,14 +245,14 @@ class sync_members_testcase extends advanced_testcase {
         $tool = $this->tool;
         $task = $this->task;
 
-        $task->sync_member_information($tool, $this->consumer, $this->members);
+        list($users) = $task->sync_member_information($tool, $this->consumer, $this->members);
 
         // Simulate that the fetched list of current users has been reduced by 3.
         $unenrolcount = 3;
         for ($i = 0; $i < $unenrolcount; $i++) {
-            $task->pop_current_users();
+            array_pop($users);
         }
-        $this->assertEquals($unenrolcount, $task->sync_unenrol($tool));
+        $this->assertEquals($unenrolcount, $task->sync_unenrol($tool, $users));
     }
 
     /**
@@ -296,13 +296,6 @@ class dummy_sync_members_task extends sync_members {
             $this->dataconnector = new data_connector();
         }
         return $this->dataconnector;
-    }
-
-    /**
-     * Helper method that removes an element in the array of current users.
-     */
-    public function pop_current_users() {
-        array_pop($this->currentusers);
     }
 
     /**
@@ -391,10 +384,11 @@ class dummy_sync_members_task extends sync_members {
      * Exposes sync_members::sync_unenrol()
      *
      * @param stdClass $tool
+     * @param array $currentusers
      * @return int
      */
-    public function sync_unenrol(stdClass $tool) {
-        $count = parent::sync_unenrol($tool);
+    public function sync_unenrol(stdClass $tool, array $currentusers) {
+        $count = parent::sync_unenrol($tool, $currentusers);
         return $count;
     }
 }
